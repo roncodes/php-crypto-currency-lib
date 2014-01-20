@@ -25,10 +25,12 @@ class Crypto_C {
 
 	private $mtgox_api;
 	private $cryptsy_api;
+	private $dogecharge_api;
 
 	public function __construct() {
 	    $this->mtgox_api = 'http://data.mtgox.com/api/1/';
 	    $this->cryptsy_api = 'http://pubapi.cryptsy.com/api.php';
+	    $this->dogecharge_api = 'https://api.dogecharge.com/v1/';
 	}
 
 	public function __call($method, $args) {
@@ -51,12 +53,23 @@ class Crypto_C {
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-		$response = json_decode(curl_exec ($ch));
+		$response = curl_exec($ch);
+		$response = (json_decode($response)) ? json_decode($response) : $response;
 		if(is_object($response)) {
 			$response->status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		}
 		curl_close ($ch);
 		return $response;
+	}
+
+	public function create_dogecoin_pay_address($yourwallet = null, $timeout = 10) {
+		if($yourwallet === null) return;
+		return trim($this->get($this->dogecharge_api . "redirecting/create?out=$yourwallet&hours=$timeout"));
+	}
+
+	public function check_for_dogecoin_payment($address = null) {
+		if($address === null) return;
+		return $this->get($this->dogecharge_api . "redirecting/check?in=$address");
 	}
 
 	public function single_bitcoin_price_in_usd() {
